@@ -1,0 +1,8 @@
+{
+  "JIRA_URL": "https://your-jira-instance.atlassian.net",
+  "JIRA_EMAIL": "your-email@example.com",
+  "JIRA_API_TOKEN": "your-jira-api-token-here",
+  "GITHUB_TOKEN": "your-github-personal-access-token-here",
+  "GITLAB_URL": "https://gitlab.com",
+  "GITLAB_TOKEN": "your-gitlab-token-here-or-omit-if-not-using"
+}
