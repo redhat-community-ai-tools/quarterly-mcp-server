@@ -317,18 +317,24 @@ def generate_quarterly_report(
     year: int,
     jira_project: Optional[str] = None,
     github_org: Optional[str] = None,
-    gitlab_group: Optional[str] = None
+    gitlab_group: Optional[str] = None,
+    jira_username: Optional[str] = None,
+    github_username: Optional[str] = None,
+    gitlab_username: Optional[str] = None
 ) -> str:
     """
     Generate comprehensive quarterly achievement report.
 
     Args:
-        username: Username (same across Jira/GitHub/GitLab)
+        username: Base username (used if platform-specific usernames not provided)
         quarter: Quarter number (1-4)
         year: Year (e.g., 2026)
         jira_project: Optional Jira project filter
         github_org: Optional GitHub organization filter
         gitlab_group: Optional GitLab group filter
+        jira_username: Optional Jira-specific username (often email like user@domain.com)
+        github_username: Optional GitHub-specific username
+        gitlab_username: Optional GitLab-specific username
 
     Returns:
         Markdown formatted quarterly report
@@ -355,10 +361,15 @@ def generate_quarterly_report(
         start_date = f'{year}-{start_month:02d}-{start_day:02d}'
         end_date = f'{year}-{end_month:02d}-{end_day:02d}'
 
+        # Use platform-specific usernames if provided, otherwise use base username
+        jira_user = jira_username if jira_username else username
+        github_user = github_username if github_username else username
+        gitlab_user = gitlab_username if gitlab_username else username
+
         # Gather data from all sources
-        jira_data = json.loads(get_jira_summary(username, start_date, end_date, jira_project))
-        github_data = json.loads(get_github_summary(username, start_date, end_date, github_org))
-        gitlab_data = json.loads(get_gitlab_summary(username, start_date, end_date, gitlab_group))
+        jira_data = json.loads(get_jira_summary(jira_user, start_date, end_date, jira_project))
+        github_data = json.loads(get_github_summary(github_user, start_date, end_date, github_org))
+        gitlab_data = json.loads(get_gitlab_summary(gitlab_user, start_date, end_date, gitlab_group))
 
         # Generate markdown report
         report = f"""# Q{quarter} {year} Quarterly Accomplishments
