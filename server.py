@@ -311,6 +311,284 @@ def get_gitlab_summary(
 
 
 @mcp.tool()
+def analyze_cycle_times(
+    username: str,
+    start_date: str,
+    end_date: str,
+    jira_project: Optional[str] = None,
+    github_org: Optional[str] = None,
+    jira_username: Optional[str] = None,
+    github_username: Optional[str] = None,
+    top_n: int = 10
+) -> str:
+    """
+    Analyze cycle times for Jira issues and GitHub PRs.
+
+    Args:
+        username: Base username (used if platform-specific usernames not provided)
+        start_date: Start date (YYYY-MM-DD)
+        end_date: End date (YYYY-MM-DD)
+        jira_project: Optional Jira project filter
+        github_org: Optional GitHub organization filter
+        jira_username: Optional Jira-specific username
+        github_username: Optional GitHub-specific username
+        top_n: Number of top items to return (default: 10)
+
+    Returns:
+        JSON with cycle time statistics and longest-running items
+    """
+    try:
+        jira_user = jira_username if jira_username else username
+        github_user = github_username if github_username else username
+
+        # Get data from both sources
+        jira_data = json.loads(get_jira_summary(jira_user, start_date, end_date, jira_project))
+        github_data = json.loads(get_github_summary(github_user, start_date, end_date, github_org))
+
+        # Calculate Jira cycle times
+        jira_cycle_times = []
+        for issue in jira_data.get('issues', []):
+            if issue['resolved']:
+                created = datetime.strptime(issue['created'], '%Y-%m-%d')
+                resolved = datetime.strptime(issue['resolved'], '%Y-%m-%d')
+                days = (resolved - created).days
+                jira_cycle_times.append({
+                    'key': issue['key'],
+                    'summary': issue['summary'],
+                    'type': issue['type'],
+                    'status': issue['status'],
+                    'cycle_days': days
+                })
+
+        # Sort by cycle time (longest first)
+        jira_cycle_times.sort(key=lambda x: x['cycle_days'], reverse=True)
+
+        # Calculate GitHub PR cycle times
+        github_cycle_times = []
+        for pr in github_data.get('prs', []):
+            if pr['merged_at']:
+                # Need to fetch PR details to get created_at
+                try:
+                    headers = get_github_headers()
+                    pr_url = pr['url'].replace('https://github.com/', 'https://api.github.com/repos/')
+                    pr_response = requests.get(pr_url, headers=headers)
+                    pr_response.raise_for_status()
+                    pr_details = pr_response.json()
+
+                    created = datetime.strptime(pr_details['created_at'][:10], '%Y-%m-%d')
+                    merged = datetime.strptime(pr['merged_at'], '%Y-%m-%d')
+                    days = (merged - created).days
+
+                    github_cycle_times.append({
+                        'number': pr['number'],
+                        'title': pr['title'],
+                        'repository': pr['repository'],
+                        'cycle_days': days,
+                        'url': pr['url']
+                    })
+                except Exception as e:
+                    # Skip PRs we can't fetch details for
+                    continue
+
+        # Sort by cycle time (longest first)
+        github_cycle_times.sort(key=lambda x: x['cycle_days'], reverse=True)
+
+        # Calculate averages
+        jira_avg = sum(x['cycle_days'] for x in jira_cycle_times) / len(jira_cycle_times) if jira_cycle_times else 0
+        github_avg = sum(x['cycle_days'] for x in github_cycle_times) / len(github_cycle_times) if github_cycle_times else 0
+
+        result = {
+            'jira': {
+                'average_days': round(jira_avg, 1),
+                'total_analyzed': len(jira_cycle_times),
+                'longest': jira_cycle_times[:top_n]
+            },
+            'github': {
+                'average_days': round(github_avg, 1),
+                'total_analyzed': len(github_cycle_times),
+                'longest': github_cycle_times[:top_n]
+            }
+        }
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return json.dumps({'error': str(e)})
+
+
+@mcp.tool()
+def identify_top_achievements(
+    username: str,
+    start_date: str,
+    end_date: str,
+    metric: str = "cycle_time",
+    jira_project: Optional[str] = None,
+    github_org: Optional[str] = None,
+    jira_username: Optional[str] = None,
+    github_username: Optional[str] = None,
+    top_n: int = 5
+) -> str:
+    """
+    Identify top achievements by cycle time, impact, or complexity.
+
+    Args:
+        username: Base username
+        start_date: Start date (YYYY-MM-DD)
+        end_date: End date (YYYY-MM-DD)
+        metric: Ranking metric - "cycle_time" (longest work), "impact" (most complex), or "recent" (latest)
+        jira_project: Optional Jira project filter
+        github_org: Optional GitHub organization filter
+        jira_username: Optional Jira-specific username
+        github_username: Optional GitHub-specific username
+        top_n: Number of top achievements to return (default: 5)
+
+    Returns:
+        JSON with ranked achievements and context for narrative building
+    """
+    try:
+        # Get cycle time analysis
+        cycle_data = json.loads(analyze_cycle_times(
+            username, start_date, end_date,
+            jira_project, github_org,
+            jira_username, github_username,
+            top_n=100  # Get more data for filtering
+        ))
+
+        achievements = []
+
+        # Process GitHub PRs
+        for pr in cycle_data.get('github', {}).get('longest', []):
+            achievements.append({
+                'type': 'github_pr',
+                'identifier': f"{pr['repository']}#{pr['number']}",
+                'title': pr['title'],
+                'cycle_days': pr['cycle_days'],
+                'repository': pr['repository'],
+                'url': pr['url'],
+                'score': pr['cycle_days']  # Default scoring by cycle time
+            })
+
+        # Process Jira issues
+        for issue in cycle_data.get('jira', {}).get('longest', []):
+            achievements.append({
+                'type': 'jira_issue',
+                'identifier': issue['key'],
+                'title': issue['summary'],
+                'cycle_days': issue['cycle_days'],
+                'issue_type': issue['type'],
+                'score': issue['cycle_days']  # Default scoring by cycle time
+            })
+
+        # Apply ranking based on metric
+        if metric == "cycle_time":
+            achievements.sort(key=lambda x: x['score'], reverse=True)
+        elif metric == "recent":
+            achievements.sort(key=lambda x: x['cycle_days'])  # Shorter cycle time = more recent
+        elif metric == "impact":
+            # Impact heuristic: longer cycle time + specific keywords
+            for achievement in achievements:
+                title_lower = achievement['title'].lower()
+                impact_score = achievement['cycle_days']
+
+                # Boost score for infrastructure keywords
+                if any(word in title_lower for word in ['infrastructure', 'foundational', 'framework', 'template', 'automation']):
+                    impact_score *= 1.5
+
+                # Boost for multi-release work
+                if any(word in title_lower for word in ['release', 'backport', 'multi-', 'across']):
+                    impact_score *= 1.3
+
+                achievement['score'] = impact_score
+
+            achievements.sort(key=lambda x: x['score'], reverse=True)
+
+        # Return top N
+        result = {
+            'metric': metric,
+            'top_achievements': achievements[:top_n],
+            'total_analyzed': len(achievements),
+            'summary': {
+                'github_prs': len([a for a in achievements if a['type'] == 'github_pr']),
+                'jira_issues': len([a for a in achievements if a['type'] == 'jira_issue'])
+            }
+        }
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return json.dumps({'error': str(e)})
+
+
+@mcp.tool()
+def refine_achievement(
+    raw_description: str,
+    context: Optional[str] = None,
+    style: str = "business_impact"
+) -> str:
+    """
+    Transform technical PR/Jira description into polished achievement narrative.
+
+    This tool provides a framework for refining achievement descriptions.
+    The actual refinement should be done by Claude based on the style guide.
+
+    Args:
+        raw_description: Technical description (e.g., "Added AWS UPI jobs")
+        context: Optional context (PR metadata, Jira details, team impact)
+        style: Narrative style - "business_impact", "technical_depth", or "leadership"
+
+    Returns:
+        Guidance for refining the achievement narrative
+    """
+    style_guides = {
+        "business_impact": """
+Transform the technical description to emphasize:
+- WHAT problem this solves for customers/users
+- HOW this enables business objectives
+- WHO benefits (team, customers, enterprise)
+- WHY this matters strategically
+
+Example transformation:
+Before: "Added AWS UPI jobs across 5 releases"
+After: "Enabled comprehensive Windows testing for enterprise customers using user-provisioned infrastructure, delivering single PR covering 5 active OpenShift releases instead of separate efforts - demonstrating efficient delivery and multi-release thinking"
+""",
+        "technical_depth": """
+Transform the technical description to emphasize:
+- WHAT technical challenges were solved
+- HOW you approached the problem (architecture, design decisions)
+- Technical complexity and scope (lines changed, files affected)
+- Engineering rigor (testing, validation, production deployment)
+
+Example transformation:
+Before: "Consolidated test templates"
+After: "Architected consolidation of 23 static YAML files into 3 parameterized Go templates (+1,280/-1,257 lines), building 11 resource code generators for programmatic generation. Created single source of truth eliminating copy-paste errors and enabling future OTE migration"
+""",
+        "leadership": """
+Transform the technical description to emphasize:
+- HOW you influenced outcomes beyond individual contribution
+- WHAT decisions you made and why
+- WHO you helped or unblocked
+- Strategic thinking and judgment calls
+
+Example transformation:
+Before: "Fixed vSphere proxy job"
+After: "Investigated AWS proxy limitation, discovered bootstrap blocker, made strategic pivot to vSphere platform. Documented decision-making process in PR description for team knowledge sharing. Filled coverage gap with proven pattern rather than forcing broken approach"
+"""
+    }
+
+    guide = style_guides.get(style, style_guides["business_impact"])
+
+    result = {
+        "raw_description": raw_description,
+        "context": context or "No additional context provided",
+        "style": style,
+        "refinement_guide": guide,
+        "next_steps": "Use this guide to refine the raw description. Focus on transforming technical details into narratives that highlight impact, decision-making, and strategic value."
+    }
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
 def generate_quarterly_report(
     username: str,
     quarter: int,

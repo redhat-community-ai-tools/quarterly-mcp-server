@@ -9,6 +9,9 @@ Automate your quarterly connection reports by aggregating accomplishments across
 - **Multi-platform aggregation**: Combines data from Jira, GitHub, and GitLab
 - **Flexible date ranges**: Query any time period, with built-in quarterly report generation
 - **Rich statistics**: Ticket counts, PR counts, closure rates, breakdowns by status/type/priority
+- **Cycle time analysis**: Identify longest-running PRs and issues with average cycle times
+- **AI-powered achievement identification**: Rank accomplishments by cycle time, impact, or complexity
+- **Achievement refinement**: Transform technical descriptions into polished performance review narratives
 - **MCP integration**: Works with Claude Code, Claude Desktop, and other MCP clients
 - **Team-friendly**: Anyone with MCP can use it for their own quarterly reviews
 
@@ -132,6 +135,65 @@ Generate comprehensive quarterly achievement report combining all platforms.
 Generate my Q2 2026 quarterly report (username: rrasouli, quarter: 2, year: 2026, jira_project: WINC, github_org: openshift)
 ```
 
+### `analyze_cycle_times`
+
+Analyze cycle times for Jira issues and GitHub PRs to identify longest-running work.
+
+**Parameters:**
+- `username` (required): Base username (used if platform-specific usernames not provided)
+- `start_date` (required): Start date (YYYY-MM-DD)
+- `end_date` (required): End date (YYYY-MM-DD)
+- `jira_project` (optional): Jira project filter
+- `github_org` (optional): GitHub organization filter
+- `jira_username` (optional): Jira-specific username (email)
+- `github_username` (optional): GitHub-specific username
+- `top_n` (optional): Number of top items to return (default: 10)
+
+**Returns:** JSON with average cycle times and longest-running items from both platforms.
+
+**Example:**
+```
+Analyze my cycle times for Q1 2026 (username: rrasouli, jira_username: rrasouli@redhat.com, start_date: 2026-01-01, end_date: 2026-03-31, jira_project: WINC, github_org: openshift)
+```
+
+### `identify_top_achievements`
+
+Identify top achievements ranked by cycle time, impact, or complexity.
+
+**Parameters:**
+- `username` (required): Base username
+- `start_date` (required): Start date (YYYY-MM-DD)
+- `end_date` (required): End date (YYYY-MM-DD)
+- `metric` (optional): Ranking metric - "cycle_time" (longest work), "impact" (most complex), or "recent" (latest). Default: "cycle_time"
+- `jira_project` (optional): Jira project filter
+- `github_org` (optional): GitHub organization filter
+- `jira_username` (optional): Jira-specific username
+- `github_username` (optional): GitHub-specific username
+- `top_n` (optional): Number of top achievements to return (default: 5)
+
+**Returns:** JSON with ranked achievements and context for narrative building.
+
+**Example:**
+```
+Identify my top 5 achievements by impact for Q1 2026 (username: rrasouli, metric: impact, start_date: 2026-01-01, end_date: 2026-03-31)
+```
+
+### `refine_achievement`
+
+Transform technical PR/Jira description into polished achievement narrative for performance reviews.
+
+**Parameters:**
+- `raw_description` (required): Technical description (e.g., "Added AWS UPI jobs across 5 releases")
+- `context` (optional): Additional context (PR metadata, Jira details, team impact)
+- `style` (optional): Narrative style - "business_impact", "technical_depth", or "leadership". Default: "business_impact"
+
+**Returns:** Refinement guide and examples for transforming technical descriptions into polished narratives.
+
+**Example:**
+```
+Refine this achievement: "Added AWS UPI jobs across 5 releases" with business_impact style
+```
+
 ## Usage Examples
 
 ### Basic Quarterly Report
@@ -157,6 +219,30 @@ Get my Jira summary from 2026-01-15 to 2026-02-15 (username: jdoe, start_date: 2
 ```
 Get my GitHub PRs merged in March 2026 (username: jdoe, start_date: 2026-03-01, end_date: 2026-03-31, org: redhat)
 ```
+
+### AI-Powered Performance Review Workflow
+
+**Step 1: Analyze cycle times**
+```
+Analyze my Q1 2026 cycle times (username: jdoe, jira_username: jdoe@company.com, start_date: 2026-01-01, end_date: 2026-03-31, jira_project: MYPROJECT, github_org: myorg)
+```
+
+**Step 2: Identify top achievements**
+```
+Identify my top 5 achievements by impact for Q1 2026 (username: jdoe, metric: impact, start_date: 2026-01-01, end_date: 2026-03-31)
+```
+
+**Step 3: Refine each achievement**
+```
+Refine this achievement: "Added infrastructure support for BYOH provisioning" with business_impact style and context: "37 files changed, +666 lines, 17 days, enables all future BYOH testing"
+```
+
+**Step 4: Generate full report**
+```
+Generate my Q1 2026 quarterly report (username: jdoe, quarter: 1, year: 2026, jira_project: MYPROJECT, github_org: myorg)
+```
+
+This workflow transforms hours of manual review preparation into 30 minutes of focused refinement.
 
 ## Output Format
 
@@ -232,10 +318,12 @@ Contributions welcome! This tool is designed for the Red Hat community but usefu
 4. Submit a pull request
 
 **Ideas for contributions:**
-- Support for additional platforms (Linear, Asana, etc.)
+- Support for additional platforms (Linear, Asana, Prow CI, Jenkins)
 - Export to different formats (CSV, JSON, PDF)
-- Velocity trend analysis
+- Recognition mining (extract peer kudos from PR/issue comments)
 - Team aggregation features
+- Interactive review dialog (guided achievement narrative building)
+- Data-driven goal setting (suggest goals based on historical velocity)
 - Slack/email integration for automated reports
 
 ## License
