@@ -1,8 +1,41 @@
-# Quarterly MCP Server
+# Quarterly Report Tools
 
-**Model Context Protocol (MCP) server for generating quarterly achievement reports from Jira, GitHub, and GitLab.**
+**AI-powered performance review automation for quarterly achievement reports.**
 
-Automate your quarterly connection reports by aggregating accomplishments across multiple platforms. Perfect for performance reviews, quarterly check-ins, and team retrospectives.
+Automate your quarterly reviews by aggregating Jira, GitHub, and GitLab data, analyzing cycle times, identifying top achievements, and transforming technical descriptions into polished narratives.
+
+## Two Ways to Use
+
+### 1. Claude Code Skill (Recommended for Quarterly Reports)
+
+**Best for:** Quarterly performance reviews (run once per quarter)
+
+**Advantages:**
+- Loaded on-demand (token efficient)
+- Uses CLI tools directly (jira, gh, glab)
+- No MCP server required
+- Perfect for `/quarterly-report` workflow
+
+**Installation:** See [.claude-code/README.md](.claude-code/README.md)
+
+### 2. MCP Server (For Always-Available Tools)
+
+**Best for:** Frequent queries throughout the quarter
+
+**Advantages:**
+- Always-available tools in any Claude Code session
+- Programmatic API via Python functions
+- Can be called by other tools/agents
+
+**Installation:** See [MCP Server Setup](#mcp-server-setup) below
+
+---
+
+**TL;DR:** Use the **Skill** for quarterly reports. Use the **MCP Server** only if you need daily Jira/GitHub queries.
+
+---
+
+# MCP Server Setup
 
 ## Features
 
