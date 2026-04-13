@@ -1,0 +1,37 @@
+# Quarterly Report Assistant - Cursor Rules
+
+When the user asks to generate a quarterly report, create quarterly achievement analysis, or mentions quarterly reviews:
+
+1. Read and follow the complete workflow in QUARTERLY_REPORT_ASSISTANT.md
+2. Use the four-phase workflow: Info Gathering → Data Collection → Narrative Refinement → Report Generation
+3. Execute CLI commands using jira, gh, and glab to fetch real data
+4. Apply cycle time analysis to identify longest-running strategic work
+5. Use the three narrative frameworks (business_impact, technical_depth, leadership) to transform technical descriptions into polished narratives
+6. Generate enhanced markdown report at ~/Q{quarter}-{year}-Accomplishments-Enhanced.md
+
+## Quick Reference
+
+**Prerequisites:**
+- jira CLI installed and authenticated
+- gh CLI installed and authenticated
+- glab CLI (optional, if using GitLab)
+
+**Trigger phrases:**
+- "Generate my quarterly report"
+- "Analyze my Q{N} {YEAR} achievements"
+- "Create performance review for Q{N} {YEAR}"
+- "What did I accomplish this quarter"
+- "Analyze cycle times for Q{N} {YEAR}"
+
+**Output:**
+Enhanced markdown report with:
+- Top 5 achievements with WHAT/HOW narratives
+- Cycle time analysis
+- By the Numbers summary
+- How I Work themes
+
+**Command pattern:**
+When user says "generate quarterly report", respond:
+"I'll help you generate your Q{quarter} {year} quarterly achievement report using cycle time analysis and AI-powered narrative refinement. Let me start by reading the workflow instructions..."
+
+Then read QUARTERLY_REPORT_ASSISTANT.md and execute the four-phase workflow.

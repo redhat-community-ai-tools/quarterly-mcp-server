@@ -2,40 +2,100 @@
 
 **AI-powered performance review automation for quarterly achievement reports.**
 
-Automate your quarterly reviews by aggregating Jira, GitHub, and GitLab data, analyzing cycle times, identifying top achievements, and transforming technical descriptions into polished narratives.
+Transform quarterly review preparation from **4-6 hours** into **30 minutes** by automating data aggregation, cycle time analysis, achievement ranking, and narrative refinement.
 
-## Two Ways to Use
+## Features
 
-### 1. Claude Code Skill (Recommended for Quarterly Reports)
+- **Cycle Time Analysis**: Identify longest-running PRs and Jira issues (strategic work)
+- **Smart Achievement Ranking**: Score by cycle time, infrastructure keywords, and complexity
+- **Three Narrative Frameworks**: Business impact, technical depth, or leadership framing
+- **Multi-Platform**: Jira, GitHub, GitLab data aggregation
+- **Three Usage Modes**: Claude Code skill, Cursor/IDE-agnostic, or MCP server
 
-**Best for:** Quarterly performance reviews (run once per quarter)
+## Quick Start
 
-**Advantages:**
-- Loaded on-demand (token efficient)
-- Uses CLI tools directly (jira, gh, glab)
-- No MCP server required
-- Perfect for `/quarterly-report` workflow
+Choose your mode based on your IDE and usage pattern:
 
-**Installation:** See [.claude-code/README.md](.claude-code/README.md)
+### 1. Claude Code Skill ⭐ (Recommended)
 
-### 2. MCP Server (For Always-Available Tools)
+**Best for:** Quarterly reports in Claude Code (once per quarter)
 
-**Best for:** Frequent queries throughout the quarter
+```bash
+# Install CLI tools
+brew install jira-cli gh
+jira init && gh auth login
 
-**Advantages:**
-- Always-available tools in any Claude Code session
-- Programmatic API via Python functions
-- Can be called by other tools/agents
+# Clone to plugins directory
+mkdir -p ~/.claude/plugins && cd ~/.claude/plugins
+git clone https://github.com/redhat-community-ai-tools/quarterly-mcp-server.git quarterly-report-assistant
 
-**Installation:** See [MCP Server Setup](#mcp-server-setup) below
+# Use it
+# In Claude Code: /quarterly-report
+```
+
+**Why:** On-demand loading (token efficient), simple CLI-based setup
+
+### 2. Cursor / Any IDE
+
+**Best for:** Cursor, Windsurf, Zed, or any IDE with Claude
+
+```bash
+# Install CLI tools
+brew install jira-cli gh
+jira init && gh auth login
+
+# Add to your workspace
+cd your-project
+curl -O https://raw.githubusercontent.com/redhat-community-ai-tools/quarterly-mcp-server/master/QUARTERLY_REPORT_ASSISTANT.md
+curl -O https://raw.githubusercontent.com/redhat-community-ai-tools/quarterly-mcp-server/master/.cursorrules
+
+# Use it in Cursor
+# @QUARTERLY_REPORT_ASSISTANT.md generate my Q1 2026 report
+```
+
+**Why:** Works in any IDE, portable, no vendor lock-in
+
+### 3. MCP Server
+
+**Best for:** Frequent queries, automation, daily Jira/GitHub queries
+
+```bash
+# Setup MCP server with Python
+git clone https://github.com/redhat-community-ai-tools/quarterly-mcp-server.git
+cd quarterly-mcp-server
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# Configure and register
+# See full instructions in INSTALLATION.md
+```
+
+**Why:** Always-available tools, programmatic API, automation-friendly
 
 ---
 
-**TL;DR:** Use the **Skill** for quarterly reports. Use the **MCP Server** only if you need daily Jira/GitHub queries.
+**Need help choosing?** See [INSTALLATION.md](INSTALLATION.md) for detailed comparison.
 
 ---
 
-# MCP Server Setup
+## What You Get
+
+Instead of manually writing:
+> "Added AWS UPI jobs across 5 releases"
+
+You get AI-refined narratives:
+> "I enabled comprehensive Windows testing for enterprise customers using user-provisioned infrastructure, delivering a single PR covering 5 active OpenShift releases (4.18-4.22) instead of separate efforts. This demonstrates efficient delivery and multi-release thinking - 1,156 lines across 25 files in just 8 days from creation to production deployment. Many enterprise customers use UPI instead of IPI, and this PR closes a major platform coverage gap."
+
+## Complete Documentation
+
+- **[INSTALLATION.md](INSTALLATION.md)** - Full installation guide for all three modes
+- **[QUARTERLY_REPORT_ASSISTANT.md](QUARTERLY_REPORT_ASSISTANT.md)** - Complete workflow instructions
+- **[.claude-code/README.md](.claude-code/README.md)** - Claude Code skill documentation
+- **MCP Server API** - See sections below
+
+---
+
+# MCP Server Documentation
 
 ## Features
 
